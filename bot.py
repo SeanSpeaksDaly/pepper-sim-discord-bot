@@ -45,7 +45,7 @@ PEPPERS = {
         "emoji": "🫑",
         "seed_cost": 10,
         "sell_price": 25,
-        "grow_time": 60 * 30,
+        "grow_time": 60 * 5,         # 5 min
         "description": "A crunchy lil' garden pepper. Fresh off the vine!",
         "rarity": "Common",
     },
@@ -54,7 +54,7 @@ PEPPERS = {
         "emoji": "🌶️",
         "seed_cost": 25,
         "sell_price": 60,
-        "grow_time": 60 * 60,
+        "grow_time": 60 * 10,        # 10 min
         "description": "Spicy!! This one's got some kick to it.",
         "rarity": "Uncommon",
     },
@@ -63,7 +63,7 @@ PEPPERS = {
         "emoji": "💛",
         "seed_cost": 50,
         "sell_price": 130,
-        "grow_time": 60 * 120,
+        "grow_time": 60 * 20,        # 20 min
         "description": "Sweet and tangy. The townsfolk love these in salads.",
         "rarity": "Rare",
     },
@@ -72,9 +72,36 @@ PEPPERS = {
         "emoji": "✨",
         "seed_cost": 200,
         "sell_price": 500,
-        "grow_time": 60 * 360,
+        "grow_time": 60 * 60,        # 60 min
         "description": "A legendary pepper that glows in the moonlight... worth a fortune!",
         "rarity": "Legendary",
+    },
+    "pumpkin": {
+        "name": "Pumpkin",
+        "emoji": "🎃",
+        "seed_cost": 40,
+        "sell_price": 100,
+        "grow_time": 60 * 15,        # 15 min
+        "description": "Big ol' orange beauty. Great for pies and profit!",
+        "rarity": "Common",
+    },
+    "corn": {
+        "name": "Sweet Corn",
+        "emoji": "🌽",
+        "seed_cost": 15,
+        "sell_price": 35,
+        "grow_time": 60 * 8,         # 8 min
+        "description": "Simple, reliable, and always sells. A farmer's best friend.",
+        "rarity": "Common",
+    },
+    "tomato": {
+        "name": "Tomato",
+        "emoji": "🍅",
+        "seed_cost": 20,
+        "sell_price": 50,
+        "grow_time": 60 * 10,        # 10 min
+        "description": "Juicy and ripe! The townspeople can't get enough of these.",
+        "rarity": "Uncommon",
     },
 }
 
@@ -86,30 +113,30 @@ STRAINS = {
         "emoji": "🌿",
         "seed_cost": 75,
         "sell_price": 200,
-        "grow_time": 60 * 90,       # 1.5 hours
+        "grow_time": 60 * 20,        # 20 min
         "description": "Mellow indica vibes. Easy to grow, smooth to sell.",
         "rarity": "Common Strain",
-        "raid_chance": 0.05,         # 5% base raid chance per check
+        "raid_chance": 0.05,
     },
     "purple_haze": {
         "name": "Purple Haze",
         "emoji": "💜",
         "seed_cost": 150,
         "sell_price": 450,
-        "grow_time": 60 * 180,      # 3 hours
+        "grow_time": 60 * 45,        # 45 min
         "description": "Sticky purple buds with a sweet aroma. High demand on the streets.",
         "rarity": "Rare Strain",
-        "raid_chance": 0.10,         # 10% base raid chance
+        "raid_chance": 0.10,
     },
     "golden_kush": {
         "name": "Golden Kush",
         "emoji": "👑",
         "seed_cost": 400,
         "sell_price": 1200,
-        "grow_time": 60 * 360,      # 6 hours
+        "grow_time": 60 * 90,        # 90 min (max)
         "description": "The legendary strain. One whiff and the whole block knows. Insane profit, insane risk.",
         "rarity": "Legendary Strain",
-        "raid_chance": 0.18,         # 18% base raid chance
+        "raid_chance": 0.18,
     },
 }
 
@@ -375,7 +402,7 @@ def load_user(user_id: int) -> dict:
             data = json.load(f)
         # Migrate
         data.setdefault("gold", STARTING_GOLD)
-        data.setdefault("inventory", {"green": 0, "red": 0, "yellow": 0, "golden": 0})
+        data.setdefault("inventory", {"green": 0, "red": 0, "yellow": 0, "golden": 0, "pumpkin": 0, "corn": 0, "tomato": 0})
         data.setdefault("bud_inventory", {"chill_leaf": 0, "purple_haze": 0, "golden_kush": 0})
         data.setdefault("plots", [])
         data.setdefault("grow_plots", [])
@@ -396,7 +423,7 @@ def load_user(user_id: int) -> dict:
         return data
     data = {
         "gold": STARTING_GOLD,
-        "inventory": {"green": 0, "red": 0, "yellow": 0, "golden": 0},
+        "inventory": {"green": 0, "red": 0, "yellow": 0, "golden": 0, "pumpkin": 0, "corn": 0, "tomato": 0},
         "bud_inventory": {"chill_leaf": 0, "purple_haze": 0, "golden_kush": 0},
         "plots": [],
         "grow_plots": [],
@@ -819,24 +846,29 @@ class DashboardView(discord.ui.View):
         check_harvests(d); save_user(self.uid, d)
         await i.response.edit_message(embed=build_store_embed(d, i.user), view=StoreView(self.uid))
 
-    @discord.ui.button(label="📦 Sell", style=discord.ButtonStyle.grey, row=1)
+    @discord.ui.button(label="📦 Sell", style=discord.ButtonStyle.danger, row=1)
     async def inv_btn(self, i, b):
         if not await self._check(i): return
         d = load_user(self.uid)
         check_harvests(d); check_bud_harvests(d); save_user(self.uid, d)
         await i.response.edit_message(embed=build_inventory_embed(d, i.user), view=InventoryView(self.uid))
 
-    @discord.ui.button(label="🎰 Casino", style=discord.ButtonStyle.danger, row=1)
+    @discord.ui.button(label="🎰 Casino", style=discord.ButtonStyle.blurple, row=1)
     async def casino_btn(self, i, b):
         if not await self._check(i): return
         d = load_user(self.uid)
         await i.response.edit_message(embed=build_casino_embed(d, i.user), view=CasinoView(self.uid))
 
     @discord.ui.button(label="📋 Menu", style=discord.ButtonStyle.grey, row=1)
-    async def menu_btn(self, i, b):
+    async def menu_btn_dash(self, i, b):
         if not await self._check(i): return
         d = load_user(self.uid)
         await i.response.edit_message(embed=build_menu_embed(d, i.user), view=MenuView(self.uid))
+
+    @discord.ui.button(label="❌ Close", style=discord.ButtonStyle.danger, row=2)
+    async def close_btn(self, i, b):
+        if not await self._check(i): return
+        await i.message.delete()
 
 # ─── Farm View ───────────────────────────────────────────────────────────────
 
@@ -860,17 +892,29 @@ class FarmView(discord.ui.View):
     @discord.ui.button(label="✨ Golden", style=discord.ButtonStyle.blurple, row=0)
     async def p_golden(self, i, b): await self._plant(i, "golden")
 
-    @discord.ui.button(label="🔄 Refresh", style=discord.ButtonStyle.grey, row=1)
+    @discord.ui.button(label="🎃 Pumpkin", style=discord.ButtonStyle.grey, row=1)
+    async def p_pumpkin(self, i, b): await self._plant(i, "pumpkin")
+    @discord.ui.button(label="🌽 Corn", style=discord.ButtonStyle.green, row=1)
+    async def p_corn(self, i, b): await self._plant(i, "corn")
+    @discord.ui.button(label="🍅 Tomato", style=discord.ButtonStyle.red, row=1)
+    async def p_tomato(self, i, b): await self._plant(i, "tomato")
+
+    @discord.ui.button(label="🔄 Refresh", style=discord.ButtonStyle.grey, row=2)
     async def refresh(self, i, b):
         if not await self._check(i): return
         d = load_user(self.uid); h = check_harvests(d); ev = roll_rare_event(d); save_user(self.uid, d)
         await i.response.edit_message(embed=build_farm_embed(d, h, i.user, rare_event=ev), view=self)
 
-    @discord.ui.button(label="◀ Back", style=discord.ButtonStyle.grey, row=1)
+    @discord.ui.button(label="◀ Back", style=discord.ButtonStyle.grey, row=2)
     async def back(self, i, b):
         if not await self._check(i): return
         d = load_user(self.uid); check_harvests(d); save_user(self.uid, d)
         await i.response.edit_message(embed=build_dashboard_embed(d, i.user), view=DashboardView(self.uid))
+
+    @discord.ui.button(label="❌ Close", style=discord.ButtonStyle.danger, row=2)
+    async def close_btn(self, i, b):
+        if not await self._check(i): return
+        await i.message.delete()
 
     async def _plant(self, i, pt):
         if not await self._check(i): return
@@ -919,6 +963,11 @@ class GrowView(discord.ui.View):
         d = load_user(self.uid); check_bud_harvests(d); save_user(self.uid, d)
         await i.response.edit_message(embed=build_dashboard_embed(d, i.user), view=DashboardView(self.uid))
 
+    @discord.ui.button(label="❌ Close", style=discord.ButtonStyle.danger, row=1)
+    async def close_btn(self, i, b):
+        if not await self._check(i): return
+        await i.message.delete()
+
     async def _plant(self, i, st):
         if not await self._check(i): return
         d = load_user(self.uid); check_bud_harvests(d)
@@ -963,6 +1012,11 @@ class StoreView(discord.ui.View):
         if not await self._check(i): return
         d = load_user(self.uid); check_harvests(d); save_user(self.uid, d)
         await i.response.edit_message(embed=build_dashboard_embed(d, i.user), view=DashboardView(self.uid))
+
+    @discord.ui.button(label="❌ Close", style=discord.ButtonStyle.danger, row=1)
+    async def close_btn(self, i, b):
+        if not await self._check(i): return
+        await i.message.delete()
 
     async def _buy_prot(self, i, item_key):
         if not await self._check(i): return
@@ -1063,6 +1117,11 @@ class InventoryView(discord.ui.View):
         d = load_user(self.uid); save_user(self.uid, d)
         await i.response.edit_message(embed=build_dashboard_embed(d, i.user), view=DashboardView(self.uid))
 
+    @discord.ui.button(label="❌ Close", style=discord.ButtonStyle.danger, row=1)
+    async def close_btn(self, i, b):
+        if not await self._check(i): return
+        await i.message.delete()
+
 # ─── Casino View ─────────────────────────────────────────────────────────────
 
 class CasinoView(discord.ui.View):
@@ -1099,6 +1158,11 @@ class CasinoView(discord.ui.View):
         if not await self._check(i): return
         d = load_user(self.uid)
         await i.response.edit_message(embed=build_dashboard_embed(d, i.user), view=DashboardView(self.uid))
+
+    @discord.ui.button(label="❌ Close", style=discord.ButtonStyle.danger, row=1)
+    async def close_btn(self, i, b):
+        if not await self._check(i): return
+        await i.message.delete()
 
 # ─── Blackjack ───────────────────────────────────────────────────────────────
 
@@ -1587,6 +1651,11 @@ class MenuView(discord.ui.View):
         d = load_user(self.uid); check_harvests(d); save_user(self.uid, d)
         await i.response.edit_message(embed=build_dashboard_embed(d, i.user), view=DashboardView(self.uid))
 
+    @discord.ui.button(label="❌ Close", style=discord.ButtonStyle.danger, row=1)
+    async def close_btn(self, i, b):
+        if not await self._check(i): return
+        await i.message.delete()
+
 
 class InfoBackView(discord.ui.View):
     def __init__(self, uid):
@@ -1597,21 +1666,36 @@ class InfoBackView(discord.ui.View):
         if i.user.id != self.uid: await i.response.send_message("Use /pep!", ephemeral=True); return
         d = load_user(self.uid)
         await i.response.edit_message(embed=build_menu_embed(d, i.user), view=MenuView(self.uid))
+    @discord.ui.button(label="❌ Close", style=discord.ButtonStyle.danger)
+    async def close_btn(self, i, b):
+        if i.user.id != self.uid: await i.response.send_message("Use /pep!", ephemeral=True); return
+        await i.message.delete()
 
 
 # ─── Embed Builders ──────────────────────────────────────────────────────────
+
+def _section(embed, title, content, inline=False):
+    """Add a cleanly separated section to an embed."""
+    line = "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈"
+    embed.add_field(name=f"{line}\n{title}", value=f"{content}\n{line}", inline=inline)
+
 
 def build_dashboard_embed(data, user):
     w = get_current_weather()
     embed = discord.Embed(
         title="🎲  S P I C E   &   D I C E  🌶️",
-        description=f"*\"{random.choice(GREETINGS)}\"*",
+        description=f"*\"{random.choice(GREETINGS)}\"*\n─────────────────",
         color=0x7CB342,
     )
-    embed.add_field(name=f"── {w['emoji']} Weather ──",
-                    value=f"**{w['name']}** — {w['description']}\nChanges in: **{get_weather_time_str(w)}**", inline=False)
 
-    # Stats
+    # Weather box
+    weather_content = (
+        f"{w['emoji']} **{w['name']}** — {w['description']}\n"
+        f"⏳ Changes in: **{get_weather_time_str(w)}**"
+    )
+    _section(embed, "☀️ Weather", weather_content)
+
+    # Stats box
     plots_used = len(data["plots"])
     grow_used = len(data.get("grow_plots", []))
     total_inv = sum(data["inventory"].values()) + sum(data.get("bud_inventory", {}).values())
@@ -1626,24 +1710,24 @@ def build_dashboard_embed(data, user):
     prot = get_active_protection_name(data)
     if prot:
         stats += f"\n🛡️ Protection: {prot}"
-    embed.add_field(name="── Overview ──", value=stats, inline=False)
+    _section(embed, "📊 Overview", stats)
 
-    # Fields quick view
+    # Fields box
     field_lines = []
     for i2, plot in enumerate(data["plots"]):
         field_lines.append(f"`P{i2+1}` {get_plot_status(plot)}")
     for i2, plot in enumerate(data.get("grow_plots", [])):
         field_lines.append(f"`G{i2+1}` {get_plot_status(plot, is_bud=True)} ⚠️")
     if field_lines:
-        embed.add_field(name="── Fields ──", value="\n".join(field_lines[:8]), inline=False)
+        _section(embed, "🌱 Fields", "\n".join(field_lines[:8]))
 
-    # Casino stats
+    # Casino stats box
     cw = data.get("casino_wins", 0); cl = data.get("casino_losses", 0); cp = data.get("casino_profit", 0)
     if cw or cl:
-        embed.add_field(name="── 🎰 Casino Record ──",
-                        value=f"W: **{cw}** | L: **{cl}** | Profit: {format_gold(cp)}", inline=False)
+        casino_content = f"🏆 W: **{cw}** | ❌ L: **{cl}** | 💵 Profit: {format_gold(cp)}"
+        _section(embed, "🎰 Casino Record", casino_content)
 
-    embed.set_footer(text="🌾 Farm | 🪴 Grow Op | 🏪 Store | 📦 Sell | 🎰 Casino | 📋 Menu")
+    embed.set_footer(text=f"💰 {data['gold']:,}g")
     embed.set_author(name=f"{user.display_name}'s Spice & Dice", icon_url=user.display_avatar.url)
     return embed
 
@@ -1651,26 +1735,26 @@ def build_dashboard_embed(data, user):
 def build_farm_embed(data, harvested, user, extra_msg="", rare_event=None):
     w = get_current_weather()
     embed = discord.Embed(title="🌾  P E P P E R   F A R M  🌾",
-                          description=f"{w['emoji']} Weather: **{w['name']}**", color=0x558B2F)
+                          description=f"{w['emoji']} Weather: **{w['name']}**\n─────────────────", color=0x558B2F)
     if rare_event:
-        embed.add_field(name=f"── {rare_event['emoji']} {rare_event['name']}! ──",
-                        value=f"*{rare_event['flavor']}*\n{rare_event['effect_msg']}", inline=False)
+        _section(embed, f"{rare_event['emoji']} {rare_event['name']}!",
+                   f"*{rare_event['flavor']}*\n{rare_event['effect_msg']}")
     if harvested:
         hl = [f"{PEPPERS[pt]['emoji']} {random.choice(HARVEST_MESSAGES).format(count=c, name=PEPPERS[pt]['name'])}"
               for pt, c in harvested.items()]
-        embed.add_field(name="── 🎉 Harvested! ──", value="\n".join(hl), inline=False)
+        _section(embed, "🎉 Harvested!", "\n".join(hl))
     if extra_msg:
-        embed.add_field(name="── Update ──", value=extra_msg, inline=False)
+        _section(embed, "📝 Update", extra_msg)
     fl = []
     for i2, plot in enumerate(data["plots"]):
         fl.append(f"`Plot {i2+1}` {get_plot_status(plot)}")
     for i2 in range(MAX_PLOTS - len(data["plots"])):
         fl.append(f"`Plot {len(data['plots'])+i2+1}` 🟫 *Empty*")
-    embed.add_field(name="── Fields ──", value="\n".join(fl), inline=False)
+    _section(embed, "🌱 Fields", "\n".join(fl))
     gm = w["grow_modifier"]
     sl = [f"{info['emoji']} {info['name']}: **{info['seed_cost']}g** ({format_time(int(info['grow_time']*gm))})"
           for pt, info in PEPPERS.items()]
-    embed.add_field(name="── Seeds ──", value="\n".join(sl), inline=False)
+    _section(embed, "🌱 Seeds", "\n".join(sl))
     embed.set_footer(text=f"💰 {data['gold']:,}g | Plots: {len(data['plots'])}/{MAX_PLOTS}")
     embed.set_author(name=f"{user.display_name}'s Farm", icon_url=user.display_avatar.url)
     return embed
@@ -1679,21 +1763,21 @@ def build_farm_embed(data, harvested, user, extra_msg="", rare_event=None):
 def build_grow_embed(data, bud_harvested, user, extra_msg="", raid_result=None):
     w = get_current_weather()
     embed = discord.Embed(title="🪴  G R O W   O P  🪴",
-                          description=f"{w['emoji']} Weather: **{w['name']}** | *Keep it low-key...*", color=0x2E7D32)
+                          description=f"{w['emoji']} Weather: **{w['name']}** | *Keep it low-key...*\n─────────────────", color=0x2E7D32)
     if raid_result:
         if raid_result.get("dodged"):
             msg = random.choice(RAID_DODGE_MESSAGES).format(protection=raid_result["protection"])
-            embed.add_field(name="── 🛡️ Close Call! ──", value=msg, inline=False)
+            _section(embed, "🛡️ Close Call!", msg)
         else:
             msg = random.choice(RAID_MESSAGES).format(lost=1)
             msg += f"\n{STRAINS[raid_result['lost_strain']]['emoji']} Lost: **{raid_result['lost_name']}**"
-            embed.add_field(name="── 🚨 RAIDED! ──", value=msg, inline=False)
+            _section(embed, "🚨 RAIDED!", msg)
     if bud_harvested:
         hl = [f"{STRAINS[st]['emoji']} {c}x **{STRAINS[st]['name']}** harvested!"
               for st, c in bud_harvested.items()]
-        embed.add_field(name="── 🎉 Harvested! ──", value="\n".join(hl), inline=False)
+        _section(embed, "🎉 Harvested!", "\n".join(hl))
     if extra_msg:
-        embed.add_field(name="── Update ──", value=extra_msg, inline=False)
+        _section(embed, "📝 Update", extra_msg)
 
     # Grow plots
     gl = []
@@ -1701,7 +1785,7 @@ def build_grow_embed(data, bud_harvested, user, extra_msg="", raid_result=None):
         gl.append(f"`Grow {i2+1}` {get_plot_status(plot, is_bud=True)}")
     for i2 in range(MAX_GROW_PLOTS - len(data.get("grow_plots", []))):
         gl.append(f"`Grow {len(data.get('grow_plots',[]))+i2+1}` 🟫 *Empty*")
-    embed.add_field(name="── Grow Plots ──", value="\n".join(gl), inline=False)
+    _section(embed, "🪴 Grow Plots", "\n".join(gl))
 
     # Strain catalog
     gm = w["grow_modifier"]
@@ -1716,9 +1800,9 @@ def build_grow_embed(data, bud_harvested, user, extra_msg="", raid_result=None):
     # Protection status
     prot = get_active_protection_name(data)
     if prot:
-        embed.add_field(name="── 🛡️ Active Protection ──", value=prot, inline=False)
+        _section(embed, "🛡️ Active Protection", prot)
     else:
-        embed.add_field(name="── ⚠️ No Protection! ──", value="*Buy protection at the Store to lower raid chance!*", inline=False)
+        _section(embed, "⚠️ No Protection!", "*Buy protection at the Store to lower raid chance!*")
 
     embed.set_footer(text=f"💰 {data['gold']:,}g | Grow Plots: {len(data.get('grow_plots',[]))}/{MAX_GROW_PLOTS}")
     embed.set_author(name=f"{user.display_name}'s Grow Op", icon_url=user.display_avatar.url)
@@ -1727,9 +1811,9 @@ def build_grow_embed(data, bud_harvested, user, extra_msg="", raid_result=None):
 
 def build_store_embed(data, user, extra_msg=""):
     embed = discord.Embed(title="🏪  T H E   S T O R E  🏪",
-                          description="*\"Need some... security? I got you, fam.\"*", color=0x6D4C41)
+                          description=f"*\"Need some... security? I got you, fam.\"*\n─────────────────", color=0x6D4C41)
     if extra_msg:
-        embed.add_field(name="── Update ──", value=extra_msg, inline=False)
+        _section(embed, "📝 Update", extra_msg)
     for pk, item in PROTECTION_ITEMS.items():
         dur = item["duration"] / 3600
         v = (f"💰 Cost: **{item['cost']}g**\n"
@@ -1739,7 +1823,7 @@ def build_store_embed(data, user, extra_msg=""):
 
     prot = get_active_protection_name(data)
     if prot:
-        embed.add_field(name="── 🛡️ Active ──", value=prot, inline=False)
+        _section(embed, "🛡️ Active", prot)
     red = get_raid_reduction(data)
     embed.set_footer(text=f"💰 {data['gold']:,}g | Current raid reduction: {int(red*100)}%")
     embed.set_author(name=f"{user.display_name}'s Shopping", icon_url=user.display_avatar.url)
@@ -1749,9 +1833,9 @@ def build_store_embed(data, user, extra_msg=""):
 def build_inventory_embed(data, user, extra_msg=""):
     w = get_current_weather()
     embed = discord.Embed(title="📦  S T A S H  📦",
-                          description="*\"What're we sellin' today?\"*", color=0xE65100)
+                          description=f"*\"What're we sellin' today?\"*\n─────────────────", color=0xE65100)
     if extra_msg:
-        embed.add_field(name="── Update ──", value=extra_msg, inline=False)
+        _section(embed, "📝 Update", extra_msg)
     # Peppers
     pl = []
     ptotal = 0
@@ -1761,7 +1845,7 @@ def build_inventory_embed(data, user, extra_msg=""):
         ptotal += v
         pl.append(f"{PEPPERS[pt]['emoji']} **{PEPPERS[pt]['name']}** x{cnt} → {format_gold(v)}" if cnt else
                   f"{PEPPERS[pt]['emoji']} {PEPPERS[pt]['name']} — *none*")
-    embed.add_field(name="── 🌶️ Peppers ──", value="\n".join(pl), inline=False)
+    _section(embed, "🌶️ Peppers", "\n".join(pl))
     # Buds
     bl = []
     btotal = 0
@@ -1771,12 +1855,12 @@ def build_inventory_embed(data, user, extra_msg=""):
         btotal += v
         bl.append(f"{STRAINS[st]['emoji']} **{STRAINS[st]['name']}** x{cnt} → {format_gold(v)}" if cnt else
                   f"{STRAINS[st]['emoji']} {STRAINS[st]['name']} — *none*")
-    embed.add_field(name="── 🌿 Buds ──", value="\n".join(bl), inline=False)
+    _section(embed, "🌿 Buds", "\n".join(bl))
     total = ptotal + btotal
     if data.get("rainbow_active"): total *= 2
     vs = f"💰 Total value: {format_gold(total)}\n🏦 Your gold: {format_gold(data['gold'])}"
     if data.get("rainbow_active"): vs += "\n🌈 **RAINBOW 2x ACTIVE!**"
-    embed.add_field(name="── 💰 Value ──", value=vs, inline=False)
+    _section(embed, "💰 Value", vs)
     embed.set_footer(text=f"Weather prices: {w['emoji']} {w['name']}")
     embed.set_author(name=f"{user.display_name}'s Stash", icon_url=user.display_avatar.url)
     return embed
@@ -1784,13 +1868,13 @@ def build_inventory_embed(data, user, extra_msg=""):
 
 def build_casino_embed(data, user):
     embed = discord.Embed(title="🎰  T H E   C A S I N O  🎰",
-                          description="*\"Step right up! The house always... well, sometimes wins.\"*", color=0x880E4F)
+                          description=f"*\"Step right up! The house always... well, sometimes wins.\"*\n─────────────────", color=0x880E4F)
     embed.add_field(name="🃏 Blackjack", value="Classic 21. Beat the dealer!\nBet 25g, 50g, 100g, or 250g.", inline=True)
     embed.add_field(name="🎡 Roulette", value="Pick red, black, or green.\nRed/Black pays 2x, Green pays 35x!", inline=True)
     embed.add_field(name="🃏 Poker", value="Texas Hold'em vs other players!\nHost a table and invite friends.", inline=True)
     cw = data.get("casino_wins", 0); cl = data.get("casino_losses", 0); cp = data.get("casino_profit", 0)
-    embed.add_field(name="── Your Record ──",
-                    value=f"Wins: **{cw}** | Losses: **{cl}** | Net: {format_gold(cp)}", inline=False)
+    _section(embed, "📊 Your Record",
+               f"🏆 Wins: **{cw}** | ❌ Losses: **{cl}** | 💵 Net: {format_gold(cp)}")
     embed.set_footer(text=f"💰 Gold: {data['gold']:,}g | Gamble responsibly... or don't!")
     embed.set_author(name=f"{user.display_name} at the Casino", icon_url=user.display_avatar.url)
     return embed
